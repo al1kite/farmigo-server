@@ -1,0 +1,39 @@
+Configuration:
+  name: Default
+
+  Properties:
+    Property:
+      name: log-path
+      value: /tmp/farmigo-server
+
+  Appenders:
+    Console:
+      name: console
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%23thread] %highlight{%-5p}{FATAL=bg_red, ERROR=red, INFO=green, DEBUG=blue, TRACE=bg_orange}  %style{${sys:PID}}{magenta} %style{%-25C{1}}{cyan} - %msg%n"
+    RollingFile:
+      name: RollingFile_Appender
+      fileName: ${log-path}.log
+      filePattern: ${log-path}.%d{yyyy-MM-dd}.log.gz
+      PatternLayout:
+        pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%23thread] %highlight{%-5p}{FATAL=bg_red, ERROR=red, INFO=green, DEBUG=blue, TRACE=bg_orange}  %style{${sys:PID}}{magenta} %style{%-25C{1}}{cyan} - %msg%n"
+      Policies:
+        TimeBasedTriggeringPolicy:
+          Interval: 1
+          modulate: true
+
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        - ref: console
+        - ref: RollingFile_Appender
+
+    Logger:
+      name: com.farmigo.server;
+      additivity: false
+      level: DEBUG
+      AppenderRef:
+        - ref: console
+        - ref: RollingFile_Appender

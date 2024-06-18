@@ -1,0 +1,16 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "Farmigo restdocs-swagger Test API Documentation",
+    "description" : "RestDocsWithSwagger Docs",
+    "version" : "0.0.1-SNAPSHOT"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:80"
+  } ],
+  "tags" : [ ],
+  "paths" : { },
+  "components" : {
+    "schemas" : { }
+  }
+}

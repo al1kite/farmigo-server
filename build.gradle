@@ -1,0 +1,153 @@
+import org.hidetake.gradle.swagger.generator.GenerateSwaggerUI
+
+buildscript {
+	ext {
+		restdocsApiSpecVersion = '0.17.1'
+	}
+}
+
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.4'
+	id 'io.spring.dependency-management' version '1.1.4'
+	id 'org.asciidoctor.jvm.convert' version '3.3.2'
+	// openAPI 플러그인 추가
+	id 'com.epages.restdocs-api-spec' version "${restdocsApiSpecVersion}"
+	// swaggerUI 플러그인 추가
+	id 'org.hidetake.swagger.generator' version '2.18.2'
+}
+
+group = 'com.farmigo'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+// 생성된 API 스펙이 어느 위치에 있는지 지정
+swaggerSources {
+	sample {
+		setInputFile(file("${project.buildDir}/api-spec/openapi3.yaml"))
+	}
+}
+
+tasks.withType(GenerateSwaggerUI) {
+// openapi3 먼저 실행 설정
+	dependsOn 'openapi3'
+	doFirst {
+		def swaggerUIFile = file("${openapi3.outputDirectory}/openapi3.yaml")
+
+		def securitySchemesContent = "  securitySchemes:\n" + "    APIKey:\n" + "      type: apiKey\n" +  \
+                                      "      name: Autho rization\n" +  \
+                                      "      in:  header\n" + \
+                                      "security:\n" +
+				"   - APIKey: []  # Appl y the security scheme here"
+
+		swaggerUIFile.append securitySchemesContent
+		}
+
+	//기존 파일 삭제했다가, build 에 json 정적파일 복사 (안해도 됨 → local 확인용)
+	delete file('src/maiesources/static/docs/')
+	copy {
+		from "build/resources/main/static/docs"
+		into "src/main/resources/static/docs/"
+	}
+}
+
+// openapi3 스펙 생성시 설정 정보
+openapi3 {
+	servers = [
+			// 배포 후 alpha URL 추가
+			{ url = "http://localhost:80" }
+	]
+	title = "Farmigo restdocs-swagger Test API Documentation"
+	description = "RestDocsWithSwagger Docs"
+	version = "0.0.1-SNAPSHOT"
+	format = "json"
+	outputDirectory = "src/main/resources/static"
+	outputFileNamePrefix = "swagger"
+}
+
+//openAPI 작성 자동화를 위해 패키징 전에 openapi3 테스크 선실행 설정
+bootJar {
+	dependsOn(':openapi3')
+}
+
+ext {
+	set('snippetsDir', file("build/generated-snippets"))
+}
+
+configurations {
+	all {
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+		exclude group: 'com.am10', module: 'log'
+	}
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+
+	// RestDocs
+	testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+	// openAPI3
+	testImplementation 'com.epages:restdocs-api-spec-mockmvc:' + restdocsApiSpecVersion
+	// SwaggerUI
+	swaggerUI 'org.webjars:swagger-ui:4.11.1'
+	implementation'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+	// okhttp
+	implementation("com.squareup.okhttp3:okhttp:4.9.1")
+	// GSON
+	implementation group: 'com.google.code.gson', name: 'gson', version: '2.9.1'
+	// lombok
+	implementation 'org.projectlombok:lombok:1.18.22'
+	// security + jwt + oauth2
+	testImplementation 'org.springframework.security:spring-security-test'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.2'
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	//mongodb
+	implementation ('org.springframework.boot:spring-boot-starter-data-mongodb')
+	// s3
+	implementation 'org.springframework.cloud:spring-cloud-starter-aws:2.2.6.RELEASE'
+
+	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+	//mapper
+	implementation 'org.mapstruct:mapstruct:1.4.2.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
+	annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+
+	// Web Socket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+}
+
+tasks.named('test') {
+	outputs.dir snippetsDir
+	useJUnitPlatform()
+}
+
+tasks.named('asciidoctor') {
+	inputs.dir snippetsDir
+	dependsOn test
+}
