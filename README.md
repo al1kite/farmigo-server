@@ -11,7 +11,7 @@ Farmigo 프로젝트 서버 레포지토리 입니다
 
 ## 팀원
 * 정다연 - 백엔드 : Auth, Scrap, Profile (Youth & Farmer), Alarm
-* 이다영 - 백엔드 : Reserve (Youth & Faramer), S3, FarmYouth, Chat
+* 이다영 - 백엔드 : Reserve (Youth & Farmer), S3, FarmYouth, Chat
 <br>
 
 ## 아키텍처 구조
